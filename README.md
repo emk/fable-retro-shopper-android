@@ -1,4 +1,6 @@
-# Retro Shopper
+# Retro Shopper (Claude Fable 5 experiment)
+
+> **Human note:** This is an experiment to see how much Claude Fable 5 can do on a greenfield project in one shot. Total cost: **$44.40** worth of tokens at API prices. See [DESIGN_NOTES.md](DESIGN_NOTES.md) (my input) and [PLAN.md](PLAN.md) (Claude's plan after asking me questions). See [more notes at the end of this file](#claude-fable-5-notes).
 
 A small Android shopping-list app loosely inspired by the classic PalmPilot
 [HandyShopper](https://palmdb.net/app/handyshopper). One shared item list, with
@@ -76,3 +78,21 @@ availability + aisles, cart with checkout, item/store management. Prices,
 quantities, and multi-device sync are out of scope for now — though the data
 layer is deliberately isolated behind a repository so a Firestore-style
 backend could slot in later.
+
+## Claude Fable 5 notes
+
+> **Human note:** Costs and time:
+>
+> ```
+> Total cost:            $44.40
+> Total duration (API):  47m 49s
+> Total duration (wall): 1h 45m 51s
+> Total code changes:    2660 lines added, 313 lines removed
+> Usage by model:
+>     claude-haiku-4-5:  75.1k input, 3.3k output, 0 cache read, 0 cache write ($0.0917)
+>       claude-fable-5:  15.7k input, 165.1k output, 30.2m cache read, 284.2k cache write ($44.31)
+> ```
+>
+> **Claude's final sign-off.** A pleasure — this was a genuinely fun one. HandyShopper was a great pick for a re-creation: small enough to finish, but with one real design problem in the middle (the cart/checkout semantics and two-state availability) that made the planning conversation actually matter.
+> 
+> For your catching-up-on-Android goal, the bits I'd flag as "2026 idioms worth internalizing" from this codebase: Compose + StateFlow<UiState> ViewModels as the default screen pattern, Navigation 3's serializable NavKeys, Room's KMP-era testability (real database in plain JVM tests via the bundled SQLite driver), version catalogs (libs.versions.toml) as the dependency source of truth, and how far you can get with a hand-wired AppContainer before Hilt earns its complexity — which for an app this size is "all the way."
