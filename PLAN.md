@@ -118,13 +118,16 @@ dimmed Shop row.
 
 Tastefully mock-free, per the design notes — three tiers, fastest first:
 
-1. **Pure-JVM unit tests (the bulk).** Room 2.7+ runs on the JVM via the
-   bundled SQLite driver, so repository and ViewModel tests exercise the
-   *real* database in ordinary fast unit tests: build an in-memory
-   `ShoppingDatabase`, wire the real repository, drive the ViewModel, assert
-   on emitted state. No fakes, no Robolectric, no emulator. Checkout
-   semantics, search/add, availability sections, cascade deletes all live
-   here.
+1. **Local JVM unit tests (the bulk).** Room runs headlessly via the bundled
+   SQLite driver (`sqlite-bundled-jvm` for host natives), so repository and
+   ViewModel tests exercise the *real* database in ordinary fast unit tests:
+   build an in-memory `ShoppingDatabase`, wire the real repository, drive the
+   ViewModel, assert on emitted state. No fakes, no emulator. (Robolectric
+   does have to supply the Android `Context` — the context-free Room builder
+   turned out to be KMP-target-only — but SQLite itself is the real engine,
+   and the suite runs in seconds. Robolectric's SDK 36 sandbox also forced
+   the Java toolchain up to 21.) Checkout semantics, search/add, availability
+   sections, cascade deletes all live here.
 2. **Headless Compose UI tests.** Compose rule tests running on the JVM
    (Robolectric-backed) for screen-level behavior: tap toggles, section
    membership, dialogs. During development, use the CLI's
