@@ -32,4 +32,6 @@
     <string name="rename_store">Rename store</string>
     <string name="delete_store">Delete store</string>
     <string name="delete_store_confirm">Delete “%1$s”? Aisle and availability records for this store will be forgotten. Your items are kept.</string>
+    <string name="home_empty">Your shopping list starts here.\nType an item name above to add it.</string>
+    <string name="shop_empty">Nothing needed at this store right now.</string>
 </resources>

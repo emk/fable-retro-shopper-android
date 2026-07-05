@@ -54,6 +54,7 @@ import net.randomhacks.retroshopper.data.Store
 import net.randomhacks.retroshopper.theme.RetroShopperTheme
 import net.randomhacks.retroshopper.ui.AppViewModelProvider
 import net.randomhacks.retroshopper.ui.ConfirmDialog
+import net.randomhacks.retroshopper.ui.EmptyHint
 import net.randomhacks.retroshopper.ui.ItemDetailsSheet
 import net.randomhacks.retroshopper.ui.RenameDialog
 import net.randomhacks.retroshopper.ui.StoreDetails
@@ -181,6 +182,10 @@ internal fun ShopScreen(
             onDeleteStore = { onDeleteStore(selectedStore.id) },
         )
       }
+    }
+    if (state.toBuy.isEmpty() && state.inCart.isEmpty() && state.unknown.isEmpty()) {
+      EmptyHint(stringResource(R.string.shop_empty))
+      return@Column
     }
     LazyColumn {
       items(state.toBuy, key = { it.item.id }) { row ->

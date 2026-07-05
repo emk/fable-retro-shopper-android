@@ -40,6 +40,7 @@ import net.randomhacks.retroshopper.R
 import net.randomhacks.retroshopper.data.Item
 import net.randomhacks.retroshopper.theme.RetroShopperTheme
 import net.randomhacks.retroshopper.ui.AppViewModelProvider
+import net.randomhacks.retroshopper.ui.EmptyHint
 import net.randomhacks.retroshopper.ui.ItemDetailsSheet
 
 /** The at-home view: every known item, with a checkbox marking it as needed. */
@@ -103,16 +104,20 @@ internal fun HomeScreen(
         singleLine = true,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     )
-    LazyColumn {
-      if (state.canAdd) {
-        item(key = "add") { AddRow(name = state.query.trim(), onClick = onAdd) }
-      }
-      items(state.items, key = { it.id }) { item ->
-        ItemRow(
-            item = item,
-            onToggleNeeded = { onToggleNeeded(item.id, it) },
-            onLongPress = { detailsItemId = item.id },
-        )
+    if (state.allItems.isEmpty() && !state.canAdd) {
+      EmptyHint(stringResource(R.string.home_empty))
+    } else {
+      LazyColumn {
+        if (state.canAdd) {
+          item(key = "add") { AddRow(name = state.query.trim(), onClick = onAdd) }
+        }
+        items(state.items, key = { it.id }) { item ->
+          ItemRow(
+              item = item,
+              onToggleNeeded = { onToggleNeeded(item.id, it) },
+              onLongPress = { detailsItemId = item.id },
+          )
+        }
       }
     }
   }
