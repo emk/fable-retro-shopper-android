@@ -5,4 +5,18 @@
     <string name="search_or_add">Search or add item</string>
     <string name="clear_search">Clear search</string>
     <string name="add_item">Add “%1$s”</string>
+    <string name="no_stores_yet">No stores yet. Add the store you shop at to start a list.</string>
+    <string name="add_store">Add store</string>
+    <string name="store_name">Store name</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="check_out">Check out</string>
+    <string name="check_out_title">Finish shopping?</string>
+    <plurals name="check_out_message">
+        <item quantity="one">%d item in the cart will be marked as bought.</item>
+        <item quantity="other">%d items in the cart will be marked as bought.</item>
+    </plurals>
+    <string name="section_in_cart">In cart</string>
+    <string name="section_not_here">Not at this store?</string>
+    <string name="aisle">Aisle %1$s</string>
 </resources>
