@@ -95,8 +95,10 @@ dimmed Shop row.
   switch plus an aisle text field (enabled while available). Switching it off
   *is* "remove from this store" — it deletes the `StoreItem` row, so the item
   drops to the dimmed section if still needed. Consequence: the aisle text
-  lives on that row, so un-marking and re-marking forgets the aisle;
-  acceptable for v1.
+  lives on that row, so un-marking and re-marking forgets the aisle. That's
+  fine: removal doesn't mean "out of stock this week", it means "gone from
+  this store" — an item coming *back* is a marginal case not worth extra
+  state.
 - The available switch is never pre-flipped when the sheet opens from a
   dimmed row: dismissing a sheet you opened to peek must not write anything.
 
