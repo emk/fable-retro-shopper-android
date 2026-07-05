@@ -45,7 +45,19 @@ emulator needed.
 
 ## Installing on your phone (sideloading)
 
-This app is deliberately not on any app store. To put it on a device:
+This app is deliberately not on any app store.
+
+**Easiest path:** download `retro-shopper.apk` from the
+[latest release](https://github.com/emk/fable-retro-shopper-android/releases/tag/latest)
+on your phone and open it from the Files app (or your browser's downloads).
+Android will ask you to allow installs from that app the first time — that's
+the expected "unknown sources" prompt for anything outside an app store. Every
+push to `main` refreshes this release, and updates install right over the old
+version without losing your data.
+
+Alternatively, build and install it yourself. (Note: your own debug build and
+the released APK are signed with different keys, so switching between them
+means uninstalling first — which deletes the app's data.)
 
 1. Build the debug APK:
 

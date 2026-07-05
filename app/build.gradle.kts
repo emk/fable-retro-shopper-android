@@ -13,14 +13,34 @@ android {
         applicationId = "net.randomhacks.retroshopper"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
+        // CI sets VERSION_CODE (the workflow run number) so every published
+        // build can install over the previous one.
+        versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
         versionName = "1.0"
+    }
+
+    // Release signing comes from CI secrets (.github/workflows/release.yml).
+    // Without RELEASE_KEYSTORE_FILE in the environment, release builds stay
+    // unsigned and local workflows are unaffected.
+    val releaseKeystore = System.getenv("RELEASE_KEYSTORE_FILE")
+    if (releaseKeystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (releaseKeystore != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
