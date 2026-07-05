@@ -68,17 +68,37 @@ Single Gradle module. Kotlin, Jetpack Compose, Material 3.
 **Home tab** — all items, alphabetical. Each row: name + needed indicator;
 tap toggles needed. A search field filters the list; when the query matches
 nothing exactly, an "Add «query»" row creates the item (marked needed).
-Long-press → rename / delete dialog.
+Long-press → item details sheet.
 
-**Shop tab** — store selector (dropdown) at top, with a "manage stores" entry
-for add/rename/delete.
+**Shop tab** — store selector (dropdown) at top; the dropdown ends with an
+"Add store…" entry (name dialog). The tab's overflow menu has
+"Rename store…" and "Delete store…" for the *currently selected* store;
+delete confirms and warns that this store's aisle/availability records go
+with it (items themselves are untouched — the FK cascade). With no stores
+yet, the tab shows an empty state with an "Add store" button. No dedicated
+store-management screen: at a personal store count, menus suffice.
 - *Main section*: needed items available at this store, sorted by aisle then
   name, aisle shown on the row. Tap = into the cart (styled distinctly,
   e.g. strikethrough + moved to an "In cart" group). Tap again = back out.
-  Row affordance (long-press or icon) edits the aisle.
-- *Dimmed bottom section*: needed items with no record at this store. Tapping
-  one opens a small dialog: mark available here + optional aisle.
+  Tap on these rows is reserved for the cart toggle — the high-frequency
+  shopping gesture never opens UI. Long-press → item details sheet.
+- *Dimmed bottom section*: needed items with no record at this store. Tap
+  opens the item details sheet (the only reason to touch these rows is to
+  mark them available and type an aisle).
 - *Checkout* button (with confirmation) finishes the trip as described above.
+
+**Item details sheet** — one Material 3 modal bottom sheet consolidating all
+low-frequency item actions; opened by long-press anywhere, or by tapping a
+dimmed Shop row.
+- Always: editable name (rename), Needed switch, Delete item (with confirm).
+- From the Shop tab, additionally a store section: an "Available at «store»"
+  switch plus an aisle text field (enabled while available). Switching it off
+  *is* "remove from this store" — it deletes the `StoreItem` row, so the item
+  drops to the dimmed section if still needed. Consequence: the aisle text
+  lives on that row, so un-marking and re-marking forgets the aisle;
+  acceptable for v1.
+- The available switch is never pre-flipped when the sheet opens from a
+  dimmed row: dismissing a sheet you opened to peek must not write anything.
 
 ## Tooling
 
@@ -124,8 +144,9 @@ Each milestone ends green (build + tests) and committed.
    (including checkout transaction and cascades).
 3. **Home tab** — list / needed toggle / search / add, ViewModel + Compose
    tests.
-4. **Shop tab** — store selector, availability sections, aisle editing, cart
+4. **Shop tab** — store selector + add-store, availability sections, cart
    & checkout, ViewModel + Compose tests.
-5. **Management flows** — store add/rename/delete, item rename/delete.
+5. **Item details sheet & management** — the details sheet (rename, needed,
+   delete, per-store availability + aisle), store rename/delete menu items.
 6. **Polish** — Material 3 theming, edge-to-edge, app icon, empty states.
 7. **Verification & docs** — emulator smoke test, screenshots, README.md.
