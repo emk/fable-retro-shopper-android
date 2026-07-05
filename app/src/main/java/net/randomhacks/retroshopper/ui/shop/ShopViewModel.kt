@@ -21,16 +21,20 @@ class ShopViewModel(private val repository: ShoppingRepository) : ViewModel() {
   private val selectedStoreId = MutableStateFlow<Long?>(null)
 
   val uiState: StateFlow<ShopUiState> =
-      combine(repository.observeStores(), selectedStoreId) { stores, selectedId ->
+      combine(repository.observeStores(), repository.observeItems(), selectedStoreId) {
+            stores,
+            items,
+            selectedId ->
             // Fall back to the first store when nothing (or a deleted store) is selected.
-            stores to (stores.find { it.id == selectedId } ?: stores.firstOrNull())
+            val store = stores.find { it.id == selectedId } ?: stores.firstOrNull()
+            Triple(stores, items.mapTo(mutableSetOf()) { it.name.lowercase() }, store)
           }
-          .flatMapLatest { (stores, store) ->
+          .flatMapLatest { (stores, names, store) ->
             if (store == null) {
-              flowOf(ShopUiState(stores = stores))
+              flowOf(ShopUiState(stores = stores, allItemNames = names))
             } else {
               repository.observeShoppingList(store.id).map { rows ->
-                buildState(stores, store, rows)
+                buildState(stores, names, store, rows)
               }
             }
           }
@@ -56,7 +60,42 @@ class ShopViewModel(private val repository: ShoppingRepository) : ViewModel() {
     viewModelScope.launch { repository.checkOut() }
   }
 
-  private fun buildState(stores: List<Store>, store: Store, rows: List<ShoppingListRow>): ShopUiState {
+  fun setNeeded(itemId: Long, needed: Boolean) {
+    viewModelScope.launch { repository.setNeeded(itemId, needed) }
+  }
+
+  /** The UI validates against existing names first, so a failed rename just no-ops. */
+  fun renameItem(itemId: Long, newName: String) {
+    viewModelScope.launch { repository.renameItem(itemId, newName) }
+  }
+
+  fun deleteItem(itemId: Long) {
+    viewModelScope.launch { repository.deleteItem(itemId) }
+  }
+
+  fun setAvailable(itemId: Long, storeId: Long, aisle: String) {
+    viewModelScope.launch { repository.setAvailable(itemId, storeId, aisle) }
+  }
+
+  fun removeFromStore(itemId: Long, storeId: Long) {
+    viewModelScope.launch { repository.removeFromStore(itemId, storeId) }
+  }
+
+  /** The UI validates against existing names first, so a failed rename just no-ops. */
+  fun renameStore(storeId: Long, newName: String) {
+    viewModelScope.launch { repository.renameStore(storeId, newName) }
+  }
+
+  fun deleteStore(storeId: Long) {
+    viewModelScope.launch { repository.deleteStore(storeId) }
+  }
+
+  private fun buildState(
+      stores: List<Store>,
+      allItemNames: Set<String>,
+      store: Store,
+      rows: List<ShoppingListRow>,
+  ): ShopUiState {
     val (carted, notCarted) = rows.partition { it.item.inCart }
     val (available, unknown) = notCarted.partition { it.available }
     return ShopUiState(
@@ -65,6 +104,7 @@ class ShopViewModel(private val repository: ShoppingRepository) : ViewModel() {
         toBuy = available.sortedWith(byAisle),
         inCart = carted.sortedWith(byAisle),
         unknown = unknown, // already name-sorted by the query
+        allItemNames = allItemNames,
     )
   }
 
@@ -91,4 +131,6 @@ data class ShopUiState(
     val inCart: List<ShoppingListRow> = emptyList(),
     /** Needed, but with no availability record at this store. Shown dimmed. */
     val unknown: List<ShoppingListRow> = emptyList(),
+    /** Lowercased names of every item, for rename validation in the details sheet. */
+    val allItemNames: Set<String> = emptySet(),
 )

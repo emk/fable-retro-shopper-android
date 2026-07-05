@@ -22,6 +22,7 @@ class HomeViewModel(private val repository: ShoppingRepository) : ViewModel() {
                 items =
                     if (trimmed.isEmpty()) items
                     else items.filter { it.name.contains(trimmed, ignoreCase = true) },
+                allItems = items,
                 // Offer "Add" unless the query names an existing item exactly.
                 canAdd =
                     trimmed.isNotEmpty() && items.none { it.name.equals(trimmed, ignoreCase = true) },
@@ -44,10 +45,22 @@ class HomeViewModel(private val repository: ShoppingRepository) : ViewModel() {
     viewModelScope.launch { repository.addNeededItem(name) }
     query.value = ""
   }
+
+  /** The UI validates against existing names first, so a failed rename just no-ops. */
+  fun renameItem(itemId: Long, newName: String) {
+    viewModelScope.launch { repository.renameItem(itemId, newName) }
+  }
+
+  fun deleteItem(itemId: Long) {
+    viewModelScope.launch { repository.deleteItem(itemId) }
+  }
 }
 
 data class HomeUiState(
     val query: String = "",
+    /** Items matching the current query — what the list shows. */
     val items: List<Item> = emptyList(),
+    /** Every item, ignoring the query; for details-sheet lookup and rename validation. */
+    val allItems: List<Item> = emptyList(),
     val canAdd: Boolean = false,
 )

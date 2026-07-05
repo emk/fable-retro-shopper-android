@@ -1,6 +1,7 @@
 package net.randomhacks.retroshopper.ui.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -22,10 +22,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +40,7 @@ import net.randomhacks.retroshopper.R
 import net.randomhacks.retroshopper.data.Item
 import net.randomhacks.retroshopper.theme.RetroShopperTheme
 import net.randomhacks.retroshopper.ui.AppViewModelProvider
+import net.randomhacks.retroshopper.ui.ItemDetailsSheet
 
 /** The at-home view: every known item, with a checkbox marking it as needed. */
 @Composable
@@ -47,6 +54,8 @@ fun HomeScreen(
       onQueryChange = viewModel::setQuery,
       onAdd = viewModel::addItem,
       onToggleNeeded = viewModel::setNeeded,
+      onRename = viewModel::renameItem,
+      onDelete = viewModel::deleteItem,
       modifier = modifier,
   )
 }
@@ -58,7 +67,27 @@ internal fun HomeScreen(
     onAdd: () -> Unit,
     onToggleNeeded: (itemId: Long, needed: Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    onRename: (itemId: Long, name: String) -> Unit = { _, _ -> },
+    onDelete: (itemId: Long) -> Unit = {},
 ) {
+  var detailsItemId by rememberSaveable { mutableStateOf<Long?>(null) }
+  val detailsItem = state.allItems.find { it.id == detailsItemId }
+  if (detailsItem != null) {
+    ItemDetailsSheet(
+        item = detailsItem,
+        otherItemNames =
+            state.allItems.mapTo(mutableSetOf()) { it.name.lowercase() } -
+                detailsItem.name.lowercase(),
+        storeDetails = null,
+        onSetNeeded = { onToggleNeeded(detailsItem.id, it) },
+        onRename = { onRename(detailsItem.id, it) },
+        onDelete = { onDelete(detailsItem.id) },
+        onSetAvailable = {},
+        onSetAisle = {},
+        onDismiss = { detailsItemId = null },
+    )
+  }
+
   Column(modifier.fillMaxSize()) {
     OutlinedTextField(
         value = state.query,
@@ -79,23 +108,29 @@ internal fun HomeScreen(
         item(key = "add") { AddRow(name = state.query.trim(), onClick = onAdd) }
       }
       items(state.items, key = { it.id }) { item ->
-        ItemRow(item = item, onToggleNeeded = { onToggleNeeded(item.id, it) })
+        ItemRow(
+            item = item,
+            onToggleNeeded = { onToggleNeeded(item.id, it) },
+            onLongPress = { detailsItemId = item.id },
+        )
       }
     }
   }
 }
 
 @Composable
-private fun ItemRow(item: Item, onToggleNeeded: (Boolean) -> Unit) {
+private fun ItemRow(item: Item, onToggleNeeded: (Boolean) -> Unit, onLongPress: () -> Unit) {
   Row(
       verticalAlignment = Alignment.CenterVertically,
       modifier =
           Modifier.fillMaxWidth()
-              .toggleable(
-                  value = item.needed,
-                  onValueChange = onToggleNeeded,
+              .combinedClickable(
+                  onClick = { onToggleNeeded(!item.needed) },
+                  onLongClick = onLongPress,
                   role = Role.Checkbox,
               )
+              // combinedClickable drops toggleable's state semantics; restore them.
+              .semantics { toggleableState = ToggleableState(item.needed) }
               .padding(horizontal = 16.dp, vertical = 4.dp),
   ) {
     Checkbox(checked = item.needed, onCheckedChange = null)

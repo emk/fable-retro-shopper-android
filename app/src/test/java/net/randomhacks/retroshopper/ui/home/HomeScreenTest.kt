@@ -2,15 +2,22 @@ package net.randomhacks.retroshopper.ui.home
 
 import android.content.Context
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isOff
 import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
@@ -71,13 +78,57 @@ class HomeScreenTest {
     waitFor(isToggleable() and isOn())
   }
 
+  @Test
+  fun detailsSheet_renameWithValidationAndDelete() {
+    composeRule.onNode(hasSetTextAction()).performTextInput("Milk")
+    waitForText("Add “Milk”")
+    composeRule.onNodeWithText("Add “Milk”").performClick()
+    composeRule.onNode(hasSetTextAction()).performTextInput("Bread")
+    waitForText("Add “Bread”")
+    composeRule.onNodeWithText("Add “Bread”").performClick()
+    composeRule.onNode(hasSetTextAction()).performTextClearance()
+    waitForText("Milk")
+
+    // Long-pressing an item opens its details sheet.
+    composeRule.onNodeWithText("Milk").performTouchInput { longClick() }
+    waitForText("Delete item")
+
+    // Renaming to another item's name is blocked with an inline error.
+    composeRule.onNodeWithContentDescription("Rename item").performClick()
+    waitFor(hasSetTextAction() and hasAnyAncestor(isDialog()))
+    val dialogField = composeRule.onNode(hasSetTextAction() and hasAnyAncestor(isDialog()))
+    dialogField.performTextClearance()
+    dialogField.performTextInput("BREAD")
+    waitForText("This name is already in use")
+    composeRule.onNodeWithText("Rename").assertIsNotEnabled()
+
+    // A fresh name goes through.
+    dialogField.performTextClearance()
+    dialogField.performTextInput("Oat milk")
+    composeRule.onNodeWithText("Rename").performClick()
+    waitForText("Oat milk")
+
+    // Delete (with confirmation) removes the item entirely.
+    composeRule.onNodeWithText("Delete item").performClick()
+    waitForText("Delete “Oat milk” everywhere? Its aisles at every store will be forgotten.")
+    composeRule.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
+    waitUntilGone(hasText("Oat milk"))
+    composeRule.onNodeWithText("Bread").assertExists()
+  }
+
   private fun waitForText(text: String) {
     waitFor(hasText(text))
   }
 
+  private fun waitUntilGone(matcher: SemanticsMatcher) {
+    composeRule.waitUntil(timeoutMillis = 5_000) {
+      composeRule.onAllNodes(matcher).fetchSemanticsNodes().isEmpty()
+    }
+  }
+
   private fun waitFor(matcher: SemanticsMatcher) {
     composeRule.waitUntil(timeoutMillis = 5_000) {
-      composeRule.onAllNodes(matcher).fetchSemanticsNodes().size == 1
+      composeRule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
     }
   }
 }

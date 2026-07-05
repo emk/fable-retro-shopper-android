@@ -3,13 +3,17 @@ package net.randomhacks.retroshopper.ui.shop
 import android.content.Context
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
@@ -85,9 +89,50 @@ class ShopScreenTest {
     composeRule.onNodeWithText("Batteries").assertExists() // still needed, still unknown
   }
 
+  @Test
+  fun unknownItem_canBeMarkedAvailableWithAisleFromDetailsSheet() {
+    // Tapping a dimmed row opens the details sheet for this store.
+    waitFor(hasText("Batteries"))
+    composeRule.onNodeWithText("Batteries").performClick()
+    waitFor(hasText("Available at Co-op"))
+
+    // Availability is off (nothing pre-flipped); switching it on reveals the aisle field.
+    composeRule.onNodeWithText("Available at Co-op").performClick()
+    waitFor(hasSetTextAction())
+    composeRule.onNode(hasSetTextAction()).performTextInput("9")
+
+    // The list behind the sheet updates live: Batteries moved out of the unknown section.
+    waitFor(hasText("Aisle 9"))
+    waitUntilGone(hasText("Not at this store?"))
+
+    // Switching availability back off returns it to the unknown section.
+    composeRule.onNodeWithText("Available at Co-op").performClick()
+    waitFor(hasText("Not at this store?"))
+  }
+
+  @Test
+  fun storeMenu_renameAndDelete() {
+    waitFor(hasText("Co-op"))
+    composeRule.onNodeWithContentDescription("Store options").performClick()
+    composeRule.onNodeWithText("Rename store").performClick()
+
+    val dialogField = composeRule.onNode(hasSetTextAction() and hasAnyAncestor(isDialog()))
+    dialogField.performTextClearance()
+    dialogField.performTextInput("City Market")
+    composeRule.onNodeWithText("Rename").performClick()
+    waitFor(hasText("City Market"))
+
+    // Deleting the only store lands on the empty state; items survive elsewhere.
+    composeRule.onNodeWithContentDescription("Store options").performClick()
+    composeRule.onNodeWithText("Delete store").performClick()
+    waitFor(hasAnyAncestor(isDialog()) and hasText("Delete"))
+    composeRule.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
+    waitFor(hasText("No stores yet. Add the store you shop at to start a list."))
+  }
+
   private fun waitFor(matcher: SemanticsMatcher) {
     composeRule.waitUntil(timeoutMillis = 5_000) {
-      composeRule.onAllNodes(matcher).fetchSemanticsNodes().size == 1
+      composeRule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
     }
   }
 
