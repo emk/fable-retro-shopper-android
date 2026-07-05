@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Retro Shopper</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_shop">Shop</string>
+    <string name="search_or_add">Search or add item</string>
+    <string name="clear_search">Clear search</string>
+    <string name="add_item">Add “%1$s”</string>
 </resources>
